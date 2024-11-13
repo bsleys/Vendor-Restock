@@ -1,0 +1,31 @@
+<form class="categories flexcol">
+    <div class="scrollable">
+        <section class="tab category"> 
+            <h2 class="border">Vendor Restock</h2>
+            <div class="form-group submenu">
+                <label>Sheet </label><div class="form-fields"><p style="text-align:center ;"><strong>{{this.sheet}}</strong></p></div>
+                <p class="notes">the sheet to be updated</p>
+            </div>
+            <div class="form-group submenu">        
+                <label>Roll Table</label>
+                <select id="tableList" name="tableList" class="list">
+                    {{#select flags.table}}
+                    {{#each this.tables}}
+                    <option value="{{this.label}}">{{this.label}}</option>
+                    {{/each}}
+                    {{/select}}
+                </select>
+                <p class="notes">The roll table to be used to find items to restock from.</p>
+            </div>
+            <div class="form-group submenu">
+                <label>Number of Items</label><input id="rollformula" name="rollformula" value="{{flags.formula}}"/>
+                <p class="notes">The number of items to add.  A roll formula can be used such as "1d20+10"</p>
+            </div>        
+        </section>
+    </div>
+    <footer>
+        <button type="submit">
+            "Restock"
+        </button>
+    </footer>
+</form>

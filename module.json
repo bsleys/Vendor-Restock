@@ -1,0 +1,53 @@
+{
+  "id": "vendor-restock",
+  "title": "Vendor Restock",
+  "version": "1.0.0",
+  "compatibility": {
+    "minimum": "12",
+    "verified": "12"
+  },
+  "relationships": {
+    "systems": [
+      {
+        "id": "pf2e",
+        "type": "system",
+        "compatibility": {}
+      }
+    ]
+  },
+  "description": "Restock a vendor. Directions for PF2e included",
+  "authors": [
+    {
+      "name": "Thirsterhall",
+      "discord": "thirsterhall#2424",
+      "flags": {}
+    }
+  ],
+  "esmodules": [
+    "module.js"
+  ],
+  "packs": [
+        {
+      "name": "vendorrestock-manual",
+      "label": "VendorRestock Manual",
+      "path": "packs/vendorrestock-manual",
+      "type": "JournalEntry",
+      "system": "pf2e",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      }
+    },
+    {
+      "name": "vendorrestock-rolltables",
+      "label": "VendorRestock Rolltables",
+      "path": "packs/vendorrestock-rolltables",
+      "type": "RollTable",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      },
+      "system": "pf2e"
+    }
+  ]
+}
