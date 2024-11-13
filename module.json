@@ -25,7 +25,7 @@
   ],
   "url": "https://github.com/bsleys/Vendor-Restock",
   "readme": "https://github.com/bsleys/Vendor-Restock/blob/master/README.md",
-  "manifest": "https://raw.githubusercontent.com/reonZ/pf2e-toolbelt/master/module.json",
+  "manifest": "https://raw.githubusercontent.com/bsleys/Vendor-Restock/refs/heads/main/module.json",
   "download": "https://github.com/bsleys/Vendor-Restock/archive/refs/heads/main.zip",
   "changelog": "https://github.com/bsleys/Vendor-Restock/blob/master/CHANGELOG.md",
   "bugs": "https://github.com/bsleys/Vendor-Restock/issues",
