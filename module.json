@@ -1,7 +1,7 @@
 {
   "id": "vendor-restock",
   "title": "Vendor Restock",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "compatibility": {
     "minimum": "12",
     "verified": "12"
@@ -23,6 +23,12 @@
       "flags": {}
     }
   ],
+  "url": "https://github.com/bsleys/Vendor-Restock",
+  "readme": "https://github.com/bsleys/Vendor-Restock/blob/master/README.md",
+  "manifest": "https://raw.githubusercontent.com/reonZ/pf2e-toolbelt/master/module.json",
+  "download": "https://github.com/bsleys/Vendor-Restock/archive/refs/heads/main.zip",
+  "changelog": "https://github.com/bsleys/Vendor-Restock/blob/master/CHANGELOG.md",
+  "bugs": "https://github.com/bsleys/Vendor-Restock/issues",
   "esmodules": [
     "module.js"
   ],
