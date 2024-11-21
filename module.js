@@ -58,8 +58,6 @@ class VendorRestock extends FormApplication {
 
     getData() {
         const flags = this.getFlags(this.actor);
-        console.log(flags);
-
         const tables = [];
         this.tables = game.tables.forEach((table) =>{
             tables.push({
@@ -67,7 +65,6 @@ class VendorRestock extends FormApplication {
                 label: table.name
             })
         });
-
         return {
             sheet: this.actor.name,
             tables,
@@ -90,17 +87,17 @@ class VendorRestock extends FormApplication {
     };
 
     async _updateObject(event, formData) {
-        const rolltableName = document.getElementById("tableList").value;
+        const rolltableId = document.getElementById("tableList").value;
         const rollformula =  formData.rollformula;
 
         const flags ={
-            table: rolltableName,
+            table: rolltableId,
             formula: rollformula,
         }
         
         await this.setFlags(this.actor, flags);
 
-        const rolltable = game.tables.getName(rolltableName);
+        const rolltable = game.tables.get(rolltableId);
         const vendor = this.actor;
 
         let currentItems = vendor.items.map(i => i._id); vendor.deleteEmbeddedDocuments("Item", currentItems);

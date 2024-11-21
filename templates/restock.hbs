@@ -9,11 +9,7 @@
             <div class="form-group submenu">        
                 <label>Roll Table</label>
                 <select id="tableList" name="tableList" class="list">
-                    {{#select flags.table}}
-                    {{#each this.tables}}
-                    <option value="{{this.label}}">{{this.label}}</option>
-                    {{/each}}
-                    {{/select}}
+                    {{selectOptions this.tables selected=flags.table valueAttr="key" labelAttr="label"}}
                 </select>
                 <p class="notes">The roll table to be used to find items to restock from.</p>
             </div>
