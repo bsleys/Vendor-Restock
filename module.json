@@ -32,6 +32,13 @@
   "esmodules": [
     "module.js"
   ],
+  "languages": [
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "lang/en.json"
+    }
+  ],
   "packs": [
         {
       "name": "vendorrestock-manual",

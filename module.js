@@ -87,8 +87,12 @@ class VendorRestock extends FormApplication {
     };
 
     async _updateObject(event, formData) {
-        const rolltableId = document.getElementById("tableList").value;
+        const rolltableId = formData.tableList;
         const rollformula =  formData.rollformula;
+        const button = document.getElementById("vendor-restock-submit");
+
+        button.innerHTML = "Shopping....";
+        button.disabled = true;
 
         const flags ={
             table: rolltableId,
@@ -99,29 +103,66 @@ class VendorRestock extends FormApplication {
 
         const rolltable = game.tables.get(rolltableId);
         const vendor = this.actor;
-
+        var infiniteStock = false;
+        const bettermerch = vendor.flags["pf2e-toolbelt"]?.["betterMerchant"] ? vendor.flags["pf2e-toolbelt"]["betterMerchant"] : null;
+        if (bettermerch){
+            infiniteStock = bettermerch.infiniteAll;
+        }
         let currentItems = vendor.items.map(i => i._id); vendor.deleteEmbeddedDocuments("Item", currentItems);
 
         let shopQtyRoll = new Roll(rollformula);
         await shopQtyRoll.evaluate();
 
+        const newItems = [];
+        if (shopQtyRoll.total > 0) {
+            const draws = await Promise.all(Array.from({ length: shopQtyRoll.total }, () => rolltable.roll()));
+            for (const draw of draws) {
+                const item = await game.packs.get(draw.results[0].documentCollection).getDocument(draw.results[0].documentId);
+                const index = newItems.findIndex(e => e.id === item.id)
+                if (index !== -1) {
+                    console.log("dupclicate item ", newItems[index]);
+                    newItems[index].system.quantity += 1;
+                }
+                else {
+                    newItems.push(item);
+                }
+            }
+            const sortedItems = newItems.sort((a, b) => a.name.localeCompare(b.name));
+            const toCreate = sortedItems.map(e => e.toObject());
+            console.log(toCreate);
+            await vendor.createEmbeddedDocuments('Item', toCreate);
+        }
+
+
+
+
+/***
+        var itemcnt = 0;
         if (shopQtyRoll.total > 0){
            do {
                 const rollResult = await rolltable.roll();
                 const pack = game.packs.get(rollResult.results[0].documentCollection);
                 if (pack) {
-                    const newItem = await pack.getDocuments({ _id: rollResult.results[0].documentId });
-                    if (newItem.length > 0) {
-                        await vendor.createEmbeddedDocuments('Item', newItem);
+                    const newItem = await pack.getDocument( rollResult.results[0].documentId );
+                    if (newItem) {
+                        const item = newItems.find((i) => i.slug === newItem.system.slug);
+                        if (item) {
+                            item.system.quantity++;
+                        }else{
+                            newItems.push(newItem);
+                        }
+                        itemcnt++;
                     }
                 }
-            } while (vendor.items.size < shopQtyRoll.total)
+           } while (itemcnt < shopQtyRoll.total)
 
-            const items = vendor.items.contents
-                .sort((a, b) => a.name.localeCompare(b.name))
-                .map((i, x) => ({ _id: i.id, sort: 112500 + x * 15 }));
-            await vendor.updateEmbeddedDocuments("Item", items);
+            const toCreate = sortedItems.map(e => e.toObject());
+
+            console.log(toCreate);
+
+            await vendor.createEmbeddedDocuments('Item', toCreate);
         }
+            */
         this.close();
     }
 }
