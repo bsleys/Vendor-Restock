@@ -1,7 +1,15 @@
 {
-    "vendor-restock": {
+    "VENDOR-RESTOCK": {
+        "window-title": "Resock",
+        "tab-catagory": "Vendor Restock",
         "vendorRestock": "Vendor Restock!",
         "sheet": "Sheet",
-        "sheet-notes": "the sheet to be updated"
+        "sheet-notes": "The sheet to be updated",
+        "rolltable": "Roll Table",
+        "rolltable-notes": "The roll table to be used to find items to restock from.",
+        "rollformula": "Number of Items",
+        "rollformula-notes": "The number of items to add. A roll formula can be used such as '1d20+10'.",
+        "submit": "Restock",
+        "working": "Shopping..."
     }
 }

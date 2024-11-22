@@ -22,7 +22,7 @@ function registerSheetButton() {
             if (!data.owner || !data.actor) return;
             if (!game.user.can("ACTOR_CREATE")) return;
 
-            const button = $(`<a class="restock-open" title="Vendor Restock"><i class="fas fa-shelves"></i>Restock</a>`);
+            const button = $(`<a class="restock-open" title="Vendor Restock"><i class="fas fa-shelves"></i>` + game.i18n.format("VENDOR-RESTOCK.window-title") + `</a>`);
 
             button.click(() => {
                 if (game.user.can("ACTOR_CREATE")) {
@@ -47,7 +47,7 @@ class VendorRestock extends FormApplication {
 
     static get defaultOptions() {
         const options = super.defaultOptions;
-        options.title = "Restock";
+        options.title = game.i18n.format("VENDOR-RESTOCK.window-title");
         options.template = "modules/vendor-restock/templates/restock.hbs";
         options.classes = ["package-configuration restock"];
         options.id = "restock";
@@ -91,7 +91,7 @@ class VendorRestock extends FormApplication {
         const rollformula =  formData.rollformula;
         const button = document.getElementById("vendor-restock-submit");
 
-        button.innerHTML = "Shopping....";
+        button.innerHTML = game.i18n.format("VENDOR-RESTOCK.working");
         button.disabled = true;
 
         const flags ={
@@ -108,7 +108,12 @@ class VendorRestock extends FormApplication {
         if (bettermerch){
             infiniteStock = bettermerch.infiniteAll;
         }
-        let currentItems = vendor.items.map(i => i._id); vendor.deleteEmbeddedDocuments("Item", currentItems);
+        //----- debugging can be deleted
+        console.log(vendor.items);
+        //----------
+
+        //let currentItems = vendor.items.map(i => i._id); 
+        vendor.deleteEmbeddedDocuments("Item", vendor.items.map(i => i._id));
 
         let shopQtyRoll = new Roll(rollformula);
         await shopQtyRoll.evaluate();
@@ -120,8 +125,8 @@ class VendorRestock extends FormApplication {
                 const item = await game.packs.get(draw.results[0].documentCollection).getDocument(draw.results[0].documentId);
                 const index = newItems.findIndex(e => e.id === item.id)
                 if (index !== -1) {
-                    console.log("dupclicate item ", newItems[index]);
-                    newItems[index].system.quantity += 1;
+                    console.log("dupclicate item ", newItems[index].system.slug);
+                    if (!infiniteStock) newItems[index].system.quantity += 1;
                 }
                 else {
                     newItems.push(item);
