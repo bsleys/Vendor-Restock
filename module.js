@@ -128,41 +128,10 @@ class VendorRestock extends FormApplication {
                 }
             }
             const sortedItems = newItems.sort((a, b) => a.name.localeCompare(b.name));
-            const toCreate = sortedItems.map(e => e.toObject());
-            console.log(toCreate);
-            await vendor.createEmbeddedDocuments('Item', toCreate);
+            console.log(sortedItems);
+            await vendor.createEmbeddedDocuments('Item', newItems);
         }
 
-
-
-
-/***
-        var itemcnt = 0;
-        if (shopQtyRoll.total > 0){
-           do {
-                const rollResult = await rolltable.roll();
-                const pack = game.packs.get(rollResult.results[0].documentCollection);
-                if (pack) {
-                    const newItem = await pack.getDocument( rollResult.results[0].documentId );
-                    if (newItem) {
-                        const item = newItems.find((i) => i.slug === newItem.system.slug);
-                        if (item) {
-                            item.system.quantity++;
-                        }else{
-                            newItems.push(newItem);
-                        }
-                        itemcnt++;
-                    }
-                }
-           } while (itemcnt < shopQtyRoll.total)
-
-            const toCreate = sortedItems.map(e => e.toObject());
-
-            console.log(toCreate);
-
-            await vendor.createEmbeddedDocuments('Item', toCreate);
-        }
-            */
         this.close();
     }
 }
