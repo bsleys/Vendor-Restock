@@ -9,6 +9,8 @@
         "rolltable-notes": "The roll table to be used to find items to restock from.",
         "rollformula": "Number of Items",
         "rollformula-notes": "The number of items to add. A roll formula can be used such as '1d20+10'.",
+        "vendorclear": "Clear Vendor",
+        "vendorclear-notes": "Delete all items fro the vendor before adding new ones.",
         "submit": "Restock",
         "working": "Shopping..."
     }

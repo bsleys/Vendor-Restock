@@ -89,52 +89,53 @@ class VendorRestock extends FormApplication {
     async _updateObject(event, formData) {
         const rolltableId = formData.tableList;
         const rollformula =  formData.rollformula;
+        const clear = formData.clearvendor;
         const button = document.getElementById("vendor-restock-submit");
 
         button.innerHTML = game.i18n.format("VENDOR-RESTOCK.working");
         button.disabled = true;
 
+        //save the forms data to the actor
         const flags ={
             table: rolltableId,
             formula: rollformula,
-        }
-        
+            clear: clear,
+        }        
         await this.setFlags(this.actor, flags);
 
         const rolltable = game.tables.get(rolltableId);
         const vendor = this.actor;
+        
+        //check for better merchant ifinite item stacks
         var infiniteStock = false;
         const bettermerch = vendor.flags["pf2e-toolbelt"]?.["betterMerchant"] ? vendor.flags["pf2e-toolbelt"]["betterMerchant"] : null;
-        if (bettermerch){
-            infiniteStock = bettermerch.infiniteAll;
-        }
-        //----- debugging can be deleted
-        console.log(vendor.items);
-        //----------
+        if (bettermerch) infiniteStock = bettermerch.infiniteAll;
 
-        //let currentItems = vendor.items.map(i => i._id); 
-        vendor.deleteEmbeddedDocuments("Item", vendor.items.map(i => i._id));
+        // clear vendor inventory if desired
+        if (clear) vendor.deleteEmbeddedDocuments("Item", vendor.items.map(i => i._id));
 
         let shopQtyRoll = new Roll(rollformula);
         await shopQtyRoll.evaluate();
 
-        const newItems = [];
         if (shopQtyRoll.total > 0) {
             const draws = await Promise.all(Array.from({ length: shopQtyRoll.total }, () => rolltable.roll()));
             for (const draw of draws) {
                 const item = await game.packs.get(draw.results[0].documentCollection).getDocument(draw.results[0].documentId);
-                const index = newItems.findIndex(e => e.id === item.id)
-                if (index !== -1) {
-                    console.log("dupclicate item ", newItems[index].system.slug);
-                    if (!infiniteStock) newItems[index].system.quantity += 1;
-                }
-                else {
-                    newItems.push(item);
+                const itemExists = vendor.items.find((i) => i.slug === item.slug);
+                if (itemExists){
+                    if (!infiniteStock){
+                        const newQty = itemExists.system.quantity + 1;
+                        await itemExists.update({ "system.quantity": newQty });
+                    }
+                } else {
+                    await vendor.createEmbeddedDocuments('Item', [item ] );
                 }
             }
-            const sortedItems = newItems.sort((a, b) => a.name.localeCompare(b.name));
-            console.log(sortedItems);
-            await vendor.createEmbeddedDocuments('Item', newItems);
+            //sort the vendors inventory   
+            const items = vendor.items.contents
+                .sort((a, b) => a.name.localeCompare(b.name))
+                .map((i, x) => ({ _id: i.id, sort: 112500 + x * 15 }));
+            await vendor.updateEmbeddedDocuments("Item", items);
         }
 
         this.close();
