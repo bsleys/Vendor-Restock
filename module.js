@@ -1,141 +1,176 @@
-
 import CONSTANTS from "./constants.js";
 
-Hooks.once("ready", () => {
-    registerSheetButton();
+Hooks.on("getActorSheetHeaderButtons", (sheet, buttons) => {
+    if (sheet.actor.type !== "loot" || !game.user.isTrusted || !game.user.can("ACTOR_CREATE")) return;
+
+    buttons.unshift({
+        label: game.i18n.localize("VENDOR-RESTOCK.window-title"),
+        class: "restock-open",
+        icon: "fas fa-shelves",
+        onclick: () => {
+            new VendorRestock({ actor: sheet.actor }).render({ force: true });
+        }
+    });
 });
 
-function registerSheetButton() {
-
-    if (!game.user.isTrusted) return;
-
-    /**
-     * Merchant sheets
-     */
-    const merchSheetNames = Object.values(CONFIG.Actor.sheetClasses.loot)
-        .map((sheetClass) => sheetClass.cls)
-        .map((sheet) => sheet.name);
-
-    merchSheetNames.forEach((sheetName) => {
-        Hooks.on("render" + sheetName, (app, html, data) => {
-            // only for GMs or the owner of this character
-            if (!data.owner || !data.actor) return;
-            if (!game.user.can("ACTOR_CREATE")) return;
-
-            const button = $(`<a class="restock-open" title="Vendor Restock"><i class="fas fa-shelves"></i>` + game.i18n.format("VENDOR-RESTOCK.window-title") + `</a>`);
-
-            button.click(() => {
-                if (game.user.can("ACTOR_CREATE")) {
-                    const restock = new VendorRestock(VendorRestock.defaultOptions, data.actor);
-                    restock.render(true);
-                }
-            });
-
-            html.closest('.app').find('.restock-open').remove();
-            let titleElement = html.closest('.app').find('.window-title');
-            if (!app._minimized) button.insertAfter(titleElement);
-        });
-    });
-}
-
-class VendorRestock extends FormApplication {
-
-    constructor(options, actor) {
+class VendorRestock extends foundry.applications.api.HandlebarsApplicationMixin(foundry.applications.api.ApplicationV2) {
+    constructor(options = {}) {
         super(options);
-        this.actor = game.actors.get(actor.id ? actor.id : actor._id);
+        this.actor = options.actor;
     }
 
-    static get defaultOptions() {
-        const options = super.defaultOptions;
-        options.title = game.i18n.format("VENDOR-RESTOCK.window-title");
-        options.template = "modules/vendor-restock/templates/restock.hbs";
-        options.classes = ["package-configuration restock"];
-        options.id = "restock";
-        options.width = 400;
-        options.closeOnSubmit = false;
-        return options;
-    }
+    /** @override */
+    static DEFAULT_OPTIONS = {
+        id: "restock",
+        tag: "div", 
+        classes: ["restock", "categories", "flexcol"],
+        window: {
+            title: "VENDOR-RESTOCK.window-title",
+            icon: "fas fa-shelves"
+        },
+        position: {
+            width: 400,
+            height: "auto"
+        },
+        // Register custom application click actions natively
+        actions: {
+            submitRestock: VendorRestock.#onRestockClick
+        }
+    };
 
-    getData() {
-        const flags = this.getFlags(this.actor);
-        const tables = [];
-        this.tables = game.tables.forEach((table) =>{
-            tables.push({
-                key: table._id,
-                label: table.name
-            })
-        });
+    /** @override */
+    static PARTS = {
+        form: {
+            template: "modules/vendor-restock/templates/restock-form.html"
+        }
+    };
+
+    /** @override */
+    async _prepareContext(options) {
+        const flags = this._getFlags(this.actor);
+        
+        const tables = game.tables.map(table => ({
+            key: table.id,
+            label: table.name
+        }));
+
         return {
             sheet: this.actor.name,
             tables,
             flags,
         };
-    };
+    }
 
-    getFlags(actor) {
-        const flags = actor.flags[CONSTANTS.FLAG_NAME]
-            ? actor.flags[CONSTANTS.FLAG_NAME]
-            : CONSTANTS.ACTOR_FLAGS;
-        return flags;
-    };
+    _getFlags(actor) {
+        return actor.getFlag(CONSTANTS.MODULE_NAME, CONSTANTS.FLAG_NAME) || CONSTANTS.ACTOR_FLAGS;
+    }
 
-    async setFlags(actor, flags) {
-        let updateData = {};
-        foundry.utils.setProperty(updateData, `flags.${CONSTANTS.FLAG_NAME}`, flags);
-        await actor.update(updateData);
-        return actor;
-    };
+    async _setFlags(actor, flags) {
+        await actor.setFlag(CONSTANTS.MODULE_NAME, CONSTANTS.FLAG_NAME, flags);
+    }
 
-    async _updateObject(event, formData) {
-        const rolltableId = formData.tableList;
-        const rollformula =  formData.rollformula;
-        const clear = formData.clearvendor;
-        const button = document.getElementById("vendor-restock-submit");
+    /**
+     * Native Click Handler via data-action
+     */
+    static async #onRestockClick(event, target) {
+        // Stop any browser form triggers instantly
+        event.preventDefault();
 
-        button.innerHTML = game.i18n.format("VENDOR-RESTOCK.working");
-        button.disabled = true;
+        // Safely extract the root container element
+        const rootElement = this.element;
+        
+        // Grab values directly by form name attributes safely
+        const rolltableId = rootElement.querySelector("[name='tableList']")?.value;
+        const rollformula = rootElement.querySelector("[name='rollformula']")?.value;
+        const clear = rootElement.querySelector("[name='clearvendor']")?.checked;
 
-        //save the forms data to the actor
-        const flags ={
-            table: rolltableId,
-            formula: rollformula,
-            clear: clear,
-        }        
-        await this.setFlags(this.actor, flags);
+        const button = rootElement.querySelector("#vendor-restock-submit");
+        if (button) {
+            button.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${game.i18n.localize("VENDOR-RESTOCK.working")}`;
+            button.disabled = true;
+        }
+
+        const flags = { table: rolltableId, formula: rollformula, clear: clear };
+        await this._setFlags(this.actor, flags);
 
         const rolltable = game.tables.get(rolltableId);
         const vendor = this.actor;
-        
-        //check for better merchant ifinite item stacks
-        var infiniteStock = false;
-        const bettermerch = vendor.flags["pf2e-toolbelt"]?.["betterMerchant"] ? vendor.flags["pf2e-toolbelt"]["betterMerchant"] : null;
-        if (bettermerch) infiniteStock = bettermerch.infiniteAll;
+        if (!rolltable) {
+            ui.notifications.error("Selected RollTable could not be found.");
+            this.close();
+            return;
+        }
 
-        // clear vendor inventory if desired
-        if (clear) vendor.deleteEmbeddedDocuments("Item", vendor.items.map(i => i._id));
+        let infiniteStock = false;
+        // Safely check if the module is enabled, then extract the value directly from the unvalidated data tree
+        if (game.modules.get("pf2e-toolbelt")?.active) {
+            const bettermerch = foundry.utils.getProperty(vendor, "flags.pf2e-toolbelt.betterMerchant");
+            if (bettermerch) infiniteStock = !!bettermerch.infiniteAll;
+        }
 
-        let shopQtyRoll = new Roll(rollformula);
-        await shopQtyRoll.evaluate();
+        if (clear) {
+            const itemIds = vendor.items.map(i => i.id);
+            await vendor.deleteEmbeddedDocuments("Item", itemIds);
+        }
+
+        const shopQtyRoll = await new Roll(rollformula).evaluate();
 
         if (shopQtyRoll.total > 0) {
             const draws = await Promise.all(Array.from({ length: shopQtyRoll.total }, () => rolltable.roll()));
+            
             for (const draw of draws) {
-                const item = await game.packs.get(draw.results[0].documentCollection).getDocument(draw.results[0].documentId);
-                const itemExists = vendor.items.find((i) => i.slug === item.slug);
-                if (itemExists){
-                    if (!infiniteStock){
-                        const newQty = itemExists.system.quantity + 1;
-                        await itemExists.update({ "system.quantity": newQty });
+                const result = draw.results[0]; 
+                if (!result) continue;
+
+                // FIXED CASE: Using the official documentUuid field as requested by the V13 engine
+                const itemUuid = result.documentUuid || null;
+                if (!itemUuid) continue;
+                
+                const itemData = await fromUuid(itemUuid);
+                if (!itemData) continue;
+
+                // Safety verification: Ensure the drawn target document is an actual Item
+                if (itemData.documentName !== "Item") {
+                    continue;
+                }
+
+                const itemExists = vendor.items.find(i => (i.slug && i.slug === itemData.slug) || i.name === itemData.name);
+
+                if (itemExists) {
+                    if (!infiniteStock) {
+                        const currentQty = foundry.utils.getProperty(itemExists, "system.quantity") || 0;
+                        await itemExists.update({ "system.quantity": currentQty + 1 });
                     }
                 } else {
-                    await vendor.createEmbeddedDocuments('Item', [item ] );
+                    // Convert to a pure, un-proxied deep-cloned JSON object
+                    const itemSource = JSON.parse(JSON.stringify(itemData.toObject()));
+                    
+                    // Safely strip database tracking parameters
+                    delete itemSource._id;
+                    delete itemSource.id;
+                    if (itemSource.ownership) delete itemSource.ownership;
+                    if (itemSource._stats) delete itemSource._stats;
+
+                    // Remove the legacy tracking flag without triggering the proxy getter
+                    if (itemSource.flags && typeof itemSource.flags === "object") {
+                        if ("exportSource" in itemSource.flags) {
+                            delete itemSource.flags.exportSource;
+                        }
+                        // Clean up the flags parent wrapper if it's completely empty
+                        if (Object.keys(itemSource.flags).length === 0) {
+                            delete itemSource.flags;
+                        }
+                    }
+
+                    await vendor.createEmbeddedDocuments("Item", [itemSource]);
                 }
             }
-            //sort the vendors inventory   
-            const items = vendor.items.contents
-                .sort((a, b) => a.name.localeCompare(b.name))
-                .map((i, x) => ({ _id: i.id, sort: 112500 + x * 15 }));
-            await vendor.updateEmbeddedDocuments("Item", items);
+
+            const itemsUpdate = vendor.items.contents
+                        .sort((a, b) => a.name.localeCompare(b.name))
+                        .map((item, idx) => ({ _id: item.id, sort: CONST.SORT_INTEGER_DENSITY + idx * 10 }));
+                        
+            await vendor.updateEmbeddedDocuments("Item", itemsUpdate);
         }
 
         this.close();
