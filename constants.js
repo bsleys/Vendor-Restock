@@ -1,9 +1,9 @@
 
 
 const CONSTANTS = {
-    MODULE_NAME: "vendorrestock",
+    MODULE_NAME: "vendor-restock",
     MODULE_FULL_NAME: "Vendor Restock",
-    FLAG_NAME: "vendorrestock",
+    FLAG_NAME: "vendor-restock",
 
     ACTOR_FLAGS: {
         table: undefined,
