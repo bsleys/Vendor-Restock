@@ -1,0 +1,17 @@
+{
+    "VENDOR-RESTOCK": {
+        "window-title": "Auffüllen",
+        "tab-catagory": "Inventar auffüllen",
+        "vendorRestock": "Inventar auffüllen!",
+        "sheet": "Blatt",
+        "sheet-notes": "Das zu ändernde Blatt",
+        "rolltable": "Zufallstabelle",
+        "rolltable-notes": "Die Zufallstabelle, von der Gegenstände genommen werden sollen.",
+        "rollformula": "Anzahl der Gegenstände",
+        "rollformula-notes": "Hinzuzufügende Anzahl Gegenstände. Die Verwendung von Würfelformen, z.B. '1d20+10' is möglich.",
+        "vendorclear": "Händlerinventar ersetzen",
+        "vendorclear-notes": "Löscht alle Gegenstände aus dem Inventar des Händlers, bevor neue hinzugefügt werden.",
+        "submit": "Auffüllen",
+        "working": "Fülle auf..."
+    }
+}
